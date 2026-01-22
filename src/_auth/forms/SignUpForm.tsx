@@ -11,9 +11,12 @@ import Loader from "@/components/shared/loader";
 
 
 import { SignupValidation } from "@/lib/validation";
+import { currentUserAccount } from "@/lib/appwrite/api";
 
 
 const SignupForm = () => {
+
+  const isLoading = false;
   const form = useForm<z.infer<typeof SignupValidation>>({
     resolver: zodResolver(SignupValidation),
     defaultValues: {
@@ -23,6 +26,12 @@ const SignupForm = () => {
       password: "",
     },
   });
+
+  async function onSubmit(values: z.infer<typeof SignupValidation>) {
+    const newUser = await currentUserAccount(values);
+
+    console.log("New User:", newUser);
+  }
 
   return (
     <Form {...form}>
@@ -37,7 +46,7 @@ const SignupForm = () => {
         </p>
 
         <form
-          onSubmit={form.handleSubmit(() => {})}
+          onSubmit={form.handleSubmit((onSubmit))}
           className="flex flex-col gap-5 w-full mt-4">
           <FormField
             control={form.control}
@@ -96,10 +105,11 @@ const SignupForm = () => {
           />
 
           <Button type="submit" className="shad-button_primary">
+            {isLoading ? (
               <div className="flex-center gap-2">
-                <Loader /> sign Up
-              </div>
-
+                <Loader/>
+                 </div>
+            ): "Sign up"}
           </Button>
 
           <p className="text-small-regular text-light-2 text-center mt-2">

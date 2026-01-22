@@ -3,7 +3,7 @@ import { Account, Avatars, Client,Databases, Storage } from "appwrite";
 
 export const appwriteConfig = {
     project: import.meta.env.VITE_APPWRITE_PROJECT_ID,
-    url    : import.meta.env.VITE_APPWRITE_ENDPOINT,
+    url    : import.meta.env.VITE_APPWRITE_URL,
 };
 
 export const client    = new Client();
