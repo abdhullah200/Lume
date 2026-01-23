@@ -102,7 +102,7 @@ A modern social media platform enhanced with cutting-edge AI features for intell
 ### Phase 1: Project Setup & Core Features
 - [x] Initialize React + TypeScript project
 - [x] Configure Tailwind CSS and Shadcn/ui
-- [ ] Set up Appwrite backend
+- [x] Set up Appwrite backend
 - [ ] Implement authentication system
 - [ ] Build post creation and management
 - [ ] Create user profiles
