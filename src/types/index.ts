@@ -4,3 +4,8 @@ export type INewUser = {
   username: string;
   password: string;
 };
+
+export type ISignIn = {
+  email: string;
+  password: string;
+};

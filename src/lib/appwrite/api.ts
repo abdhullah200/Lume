@@ -18,3 +18,13 @@ export async function currentUserAccount(user:INewUser){
         return error;
     }
 }
+
+export async function signInAccount(email: string, password: string){
+    try{
+        const session = await account.createEmailPasswordSession(email, password);
+        return session;
+    }catch(error: any){
+        console.log(error);
+        throw error;
+    }
+}

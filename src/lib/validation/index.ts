@@ -7,3 +7,8 @@ export const SignupValidation = z.object({
     password: z.string().min(6, {message: "Password must be at least 6 characters long."}).max(100, {message: "Too long."}),
 });
 
+export const SignInValidation = z.object({
+    email: z.string().email(),
+    password: z.string().min(6, {message: "Password must be at least 6 characters long."}),
+});
+
