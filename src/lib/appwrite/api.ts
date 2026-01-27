@@ -45,7 +45,7 @@ export async function saveUserToDB( user:{
 }){
     try{
         const newUser = await databases.createDocument(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             ID.unique(),
             user,
@@ -60,6 +60,14 @@ export async function saveUserToDB( user:{
 
 export async function signInAccount(user:{email: string; password: string;}){
     try{
+        // Reuse existing session if one is active to avoid Appwrite 409 errors
+        try {
+            const activeSession = await account.getSession('current');
+            if (activeSession) return activeSession;
+        } catch (_) {
+            // No active session; proceed to create one
+        }
+
         const session = await account.createEmailPasswordSession(user.email, user.password);
         return session;
     }catch(error: any){
@@ -75,7 +83,7 @@ export async function getCurrentUser(){
         if(!currentUserAccount) throw Error;
 
         const currentUser = await databases.listDocuments(
-            appwriteConfig.databasesId,
+            appwriteConfig.databaseId,
             appwriteConfig.userCollectionId,
             [
                 Query.equal("accountId", currentUserAccount.$id)
