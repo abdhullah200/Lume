@@ -2,96 +2,113 @@ import * as z from "zod";
 import { useForm } from "react-hook-form";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useToast } from "@/hooks/use-toast";
 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import Loader from "@/components/shared/loader";
+
 
 
 
 import { SignupValidation } from "@/lib/validation";
-import { currentUserAccount, signInAccount } from "@/lib/appwrite/api";
-import { userCreateUserAccountMutation, userSignInAccountMutation } from "@/lib/react-query/quriesAndMutations";
 import { useUserContext } from "@/context/AuthContext";
-
+import { useToast } from "@/hooks/use-toast";
+import { userCreateUserAccountMutation, userSignInAccountMutation } from "@/lib/react-query/quriesAndMutations";
+import { Loader } from "lucide-react";
 
 const SignupForm = () => {
-  const {toast} = useToast();
-  const {checkAuthUser,isLoading:isUserLoading} = useUserContext();
+  const { toast } = useToast();
   const navigate = useNavigate();
+  const { checkAuthUser, isLoading: isUserLoading } = useUserContext();
 
-  const { mutateAsync: createUserAccount, isPending: isCreatingAccount } = userCreateUserAccountMutation();
-  const { mutateAsync: signInAccount, isPending: isSigningInUser } = userSignInAccountMutation();
-  
   const form = useForm<z.infer<typeof SignupValidation>>({
     resolver: zodResolver(SignupValidation),
     defaultValues: {
       name: "",
       username: "",
-    email: "",
+      email: "",
       password: "",
     },
   });
 
+  // Queries
+  const { mutateAsync: createUserAccount, isPending: isCreatingAccount } = userCreateUserAccountMutation();
+  const { mutateAsync: signInAccount, isPending: isSigningInUser } = userSignInAccountMutation();
 
-  async function onSubmit(values: z.infer<typeof SignupValidation>) {
-    const newUser = await currentUserAccount(values);
+  // Handler
+  const handleSignup = async (user: z.infer<typeof SignupValidation>) => {
+    try {
+      const newUser = await createUserAccount(user);
 
-    if (!newUser) {
-      toast({
-        title: "Sign up failed. Please try again.",
+      if (!newUser) {
+        toast({ title: "Sign up failed. Please try again.", });
+        
+        return;
+      }
+
+      const session = await signInAccount({
+        email: user.email,
+        password: user.password,
       });
-      return;
+
+      if (!session) {
+        toast({ title: "Something went wrong. Please login your new account", });
+        
+        navigate("/sign-in");
+        
+        return;
+      }
+
+      const isLoggedIn = await checkAuthUser();
+
+      if (isLoggedIn) {
+        form.reset();
+
+        navigate("/");
+      } else {
+        toast({ title: "Login failed. Please try again.", });
+        
+        return;
+      }
+    } catch (error) {
+      console.log({ error });
     }
+  };
 
-    const session = await signInAccount({
-      email: values.email,
-      password: values.password,
-    });
-
-    if (!session) {
-      toast({
-        title: "Sign in failed. Please try again.",
-      });
-      return;
-    }
-
-    const isLoggedIn = await checkAuthUser();
-
-    if(isLoggedIn){
-      form.reset();
-      navigate("/");
-    }else{
-      toast({title: 'Sign up failed. Please try again.'});
-    }
-  
-  }
-   
   return (
     <Form {...form}>
-      <div className="sm:w-420 flex-center flex-col">
-        <img src="/assets/images/logo.svg" alt="logo" />
+      <div className="w-full max-w-md sm:max-w-lg mx-auto flex-center flex-col px-4 sm:px-6 py-8 sm:py-12">
+        <div className="mb-6 sm:mb-8">
+          <img 
+            src="/assets/images/logo.png" 
+            alt="logo" 
+            className="w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48 object-contain drop-shadow-lg" 
+          />
+        </div>
 
-        <h2 className="h3-bold md:h2-bold pt-5 sm:pt-12">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center mb-2 sm:mb-3">
           Create a new account
         </h2>
-        <p className="text-light-3 small-medium md:base-regular mt-2">
+        <p className="text-light-3 text-sm sm:text-base md:text-lg mt-1 sm:mt-2 text-center px-2 mb-6 sm:mb-8">
           To use snapgram, Please enter your details
         </p>
 
         <form
-          onSubmit={form.handleSubmit((onSubmit))}
-          className="flex flex-col gap-5 w-full mt-4">
+          onSubmit={form.handleSubmit(handleSignup)}
+          className="flex flex-col gap-5 sm:gap-6 w-full">
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="shad-form_label">Name</FormLabel>
+              <FormItem className="space-y-2">
+                <FormLabel className="shad-form_label text-base sm:text-lg font-medium">Name</FormLabel>
                 <FormControl>
-                  <Input type="text" className="shad-input" {...field} />
+                  <Input 
+                    type="text" 
+                    className="shad-input text-base sm:text-lg h-12 sm:h-14 rounded-lg" 
+                    placeholder="Enter your name"
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -102,10 +119,15 @@ const SignupForm = () => {
             control={form.control}
             name="username"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="shad-form_label">Username</FormLabel>
+              <FormItem className="space-y-2">
+                <FormLabel className="shad-form_label text-base sm:text-lg font-medium">Username</FormLabel>
                 <FormControl>
-                  <Input type="text" className="shad-input" {...field} />
+                  <Input 
+                    type="text" 
+                    className="shad-input text-base sm:text-lg h-12 sm:h-14 rounded-lg" 
+                    placeholder="Choose a username"
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -116,10 +138,15 @@ const SignupForm = () => {
             control={form.control}
             name="email"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="shad-form_label">Email</FormLabel>
+              <FormItem className="space-y-2">
+                <FormLabel className="shad-form_label text-base sm:text-lg font-medium">Email</FormLabel>
                 <FormControl>
-                  <Input type="text" className="shad-input" {...field} />
+                  <Input 
+                    type="email" 
+                    className="shad-input text-base sm:text-lg h-12 sm:h-14 rounded-lg" 
+                    placeholder="Enter your email"
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -130,29 +157,39 @@ const SignupForm = () => {
             control={form.control}
             name="password"
             render={({ field }) => (
-              <FormItem>
-                <FormLabel className="shad-form_label">Password</FormLabel>
+              <FormItem className="space-y-2">
+                <FormLabel className="shad-form_label text-base sm:text-lg font-medium">Password</FormLabel>
                 <FormControl>
-                  <Input type="password" className="shad-input" {...field} />
+                  <Input 
+                    type="password" 
+                    className="shad-input text-base sm:text-lg h-12 sm:h-14 rounded-lg" 
+                    placeholder="Create a password"
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <Button type="submit" className="shad-button_primary">
-            {isCreatingAccount ? (
+          <Button 
+            type="submit" 
+            className="shad-button_primary w-full text-base sm:text-lg font-semibold py-6 sm:py-7 mt-4 sm:mt-6 rounded-lg shadow-lg hover:shadow-xl transition-all duration-200"
+          >
+            {isCreatingAccount || isSigningInUser || isUserLoading ? (
               <div className="flex-center gap-2">
-                <Loader/>
-                 </div>
-            ): "Sign up"}
+                <Loader /> Loading...
+              </div>
+            ) : (
+              "Sign Up"
+            )}
           </Button>
 
-          <p className="text-small-regular text-light-2 text-center mt-2">
-            Already have an account?
+          <p className="text-sm sm:text-base text-light-2 text-center mt-6 sm:mt-8">
+            Already have an account?{" "}
             <Link
               to="/sign-in"
-              className="text-primary-500 text-small-semibold ml-1">
+              className="text-primary-500 font-semibold ml-1 hover:underline transition-colors">
               Log in
             </Link>
           </p>

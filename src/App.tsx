@@ -10,7 +10,7 @@ import { Toaster } from '@/components/ui/toaster'
 
 const App = () => {
   return (
-    <main className='flex h-screen'>
+    <main className='flex flex-col w-full min-h-screen overflow-x-hidden'>
         <Routes>
             {/* public routes */}
             <Route element={<AuthLayout/>}>

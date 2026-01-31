@@ -4,97 +4,124 @@ import { account, appwriteConfig, avatars, databases } from "./config";
 import { ca } from "zod/locales";
 import { Query } from "appwrite";
 
-export async function currentUserAccount(user:INewUser){
-    try{
-        const newAccount = await account.create(
-            ID.unique(),
-            user.email,
-            user.password,
-            user.name
-        );
+// AUTH
 
-        if(!newAccount) throw Error;
+// SIGN UP
+export async function createUserAccount(user: INewUser) {
+  try {
+    const newAccount = await account.create(
+      ID.unique(),
+      user.email,
+      user.password,
+      user.name
+    );
 
-        const avatarsUrl = avatars.getInitials(user.name);
+    if (!newAccount) throw Error;
 
-        const newUser = await saveUserToDB({
-            accountId: newAccount.$id,
-            name: newAccount.name,
-            email: newAccount.email,
-            username: user.username,
-            imageUrl: new URL(avatarsUrl),
-        })
+    const avatarUrl = avatars.getInitials(user.name);
 
-        //const newUser    = await saveUserToDB()
+    const newUser = await saveUserToDB({
+      accountId: newAccount.$id,
+      name: newAccount.name,
+      email: newAccount.email,
+      username: user.username,
+      imageUrl: avatarUrl,
+    });
 
-        return newUser;
-        
-
-    }catch(error){
-        console.log(error);
-        return error;
-    }
+    return newUser;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 }
 
-export async function saveUserToDB( user:{
-    accountId: string;
-    name     : string;
-    email    : string;
-    imageUrl : URL;
-    username?: string;
-}){
-    try{
-        const newUser = await databases.createDocument(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            ID.unique(),
-            user,
-        )
-        return newUser;
-    }catch(error){
-        console.log(error);
-        throw error;
-    }
+// SAVE USER TO DB
+export async function saveUserToDB(user: {
+  accountId: string;
+  email: string;
+  name: string;
+  imageUrl: string;
+  username?: string;
+}) {
+  try {
+    const newUser = await databases.createDocument(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      ID.unique(),
+      user
+    );
+
+    return newUser;
+  } catch (error) {
+    console.log(error);
+  }
 }
 
-
-export async function signInAccount(user:{email: string; password: string;}){
-    try{
-        // Reuse existing session if one is active to avoid Appwrite 409 errors
-        try {
-            const activeSession = await account.getSession('current');
-            if (activeSession) return activeSession;
-        } catch (_) {
-            // No active session; proceed to create one
-        }
-
-        const session = await account.createEmailPasswordSession(user.email, user.password);
-        return session;
-    }catch(error: any){
+// SIGN IN
+export async function signInAccount(user: { email: string; password: string }) {
+  try {
+    // Delete any existing session before creating a new one
+    try {
+      await account.deleteSession("current");
+    } catch (error: any) {
+      // If error is 401 (unauthorized), treat as no session to delete and continue
+      if (error?.code !== 401) {
         console.log(error);
-        throw error;
+      }
     }
+
+    const session = await account.createEmailPasswordSession(user.email, user.password);
+
+    return session;
+  } catch (error) {
+    console.log(error);
+    throw error;
+  }
 }
 
-export async function getCurrentUser(){
-    try{
-        const currentUserAccount = await account.get();
-        
-        if(!currentUserAccount) throw Error;
+// GET ACCOUNT
+export async function getAccount() {
+  try {
+    const currentAccount = await account.get();
 
-        const currentUser = await databases.listDocuments(
-            appwriteConfig.databaseId,
-            appwriteConfig.userCollectionId,
-            [
-                Query.equal("accountId", currentUserAccount.$id)
-            ]
-        )
-        if(!currentUser) throw Error;
+    return currentAccount;
+  } catch (error) {
+    console.log(error);
+  }
+}
 
-        return currentUser.documents[0];
+// GET USER
+export async function getCurrentUser() {
+  try {
+    const currentAccount = await getAccount();
 
-    }catch(error){
-        console.log(error);
-        throw error;
+    if (!currentAccount) throw Error;
+
+    const currentUser = await databases.listDocuments(
+      appwriteConfig.databaseId,
+      appwriteConfig.userCollectionId,
+      [Query.equal("accountId", currentAccount.$id)]
+    );
+
+    if (!currentUser) throw Error;
+
+    return currentUser.documents[0];
+  } catch (error) {
+    console.log(error);
+    return null;
+  }
+}
+
+// SIGN OUT
+export async function signOutAccount() {
+  try {
+    const session = await account.deleteSession("current");
+    return session;
+  } catch (error: any) {
+    // If error is 401 (unauthorized), treat as already logged out and return null
+    if (error?.code === 401) {
+      return null;
     }
+    console.log(error);
+  }
 }
