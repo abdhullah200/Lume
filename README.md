@@ -102,6 +102,7 @@ A modern social media platform enhanced with cutting-edge AI features for intell
 - [x] Initialize React + TypeScript project
 - [x] Configure Tailwind CSS and Shadcn/ui
 - [x] Set up Appwrite backend
+- [x] Post creation - **IN PROGRESS**
 - [x] Implement authentication system
 - [ ] Build post creation and management
 - [ ] Create user profiles
